@@ -1,0 +1,34 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.31903.59
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{80B63552-AFEE-4D45-AA69-12AE62A1F4D9}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Simplex.Core", "src\Simplex.Core\Simplex.Core.csproj", "{DEAB14F8-44DC-4E46-9192-F71A72C0B6CF}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SimplexSpeichermanager", "src\SimplexSpeichermanager\SimplexSpeichermanager.csproj", "{7DB71F37-5994-48E2-8C63-B3A00D13D247}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{DEAB14F8-44DC-4E46-9192-F71A72C0B6CF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{DEAB14F8-44DC-4E46-9192-F71A72C0B6CF}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{DEAB14F8-44DC-4E46-9192-F71A72C0B6CF}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{DEAB14F8-44DC-4E46-9192-F71A72C0B6CF}.Release|Any CPU.Build.0 = Release|Any CPU
+		{7DB71F37-5994-48E2-8C63-B3A00D13D247}.Debug|Any CPU.ActiveCfg = Debug|x64
+		{7DB71F37-5994-48E2-8C63-B3A00D13D247}.Debug|Any CPU.Build.0 = Debug|x64
+		{7DB71F37-5994-48E2-8C63-B3A00D13D247}.Release|Any CPU.ActiveCfg = Release|x64
+		{7DB71F37-5994-48E2-8C63-B3A00D13D247}.Release|Any CPU.Build.0 = Release|x64
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{DEAB14F8-44DC-4E46-9192-F71A72C0B6CF} = {80B63552-AFEE-4D45-AA69-12AE62A1F4D9}
+		{7DB71F37-5994-48E2-8C63-B3A00D13D247} = {80B63552-AFEE-4D45-AA69-12AE62A1F4D9}
+	EndGlobalSection
+EndGlobal

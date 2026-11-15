@@ -1,0 +1,84 @@
+name: Build Simplex Speichermanager
+
+on:
+  push:
+    branches: ['**']
+    tags: ['v*']
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    name: Build (${{ matrix.arch }})
+    runs-on: windows-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        arch: [x64, arm64]
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: .NET 8 SDK einrichten
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+
+      - name: Publish (self-contained, inkl. Windows App SDK)
+        shell: pwsh
+        run: |
+          $plat = if ('${{ matrix.arch }}' -eq 'arm64') { 'ARM64' } else { 'x64' }
+          dotnet publish src/SimplexSpeichermanager/SimplexSpeichermanager.csproj `
+            -c Release `
+            -r win-${{ matrix.arch }} `
+            -p:Platform=$plat `
+            --self-contained true `
+            -p:PublishReadyToRun=true `
+            -p:DebugType=None `
+            -o publish/SimplexSpeichermanager
+
+      - name: Ausgabe prüfen
+        shell: pwsh
+        run: |
+          if (-not (Test-Path publish/SimplexSpeichermanager/SimplexSpeichermanager.exe)) { throw "EXE fehlt" }
+          if (-not (Test-Path publish/SimplexSpeichermanager/Microsoft.WindowsAppRuntime.dll)) { throw "Windows App Runtime fehlt" }
+          Get-ChildItem publish/SimplexSpeichermanager -Filter *.pri | Select-Object Name, Length
+          $size = (Get-ChildItem publish/SimplexSpeichermanager -Recurse | Measure-Object Length -Sum).Sum / 1MB
+          "Paketgröße: {0:N1} MB" -f $size
+
+      - name: Smoke-Test (App startet?)
+        if: matrix.arch == 'x64'
+        continue-on-error: true
+        shell: pwsh
+        run: |
+          $p = Start-Process publish/SimplexSpeichermanager/SimplexSpeichermanager.exe -PassThru
+          Start-Sleep -Seconds 12
+          if ($p.HasExited) {
+            $log = Join-Path $env:LOCALAPPDATA 'SimplexSpeichermanager\log.txt'
+            if (Test-Path $log) { Get-Content $log }
+            throw "App wurde sofort beendet (ExitCode $($p.ExitCode))"
+          }
+          "App läuft (PID $($p.Id))"
+          Stop-Process -Id $p.Id -Force
+
+      - name: ZIP erstellen
+        shell: pwsh
+        run: Compress-Archive -Path publish/SimplexSpeichermanager -DestinationPath SimplexSpeichermanager-win-${{ matrix.arch }}.zip
+
+      - name: Artefakt hochladen
+        uses: actions/upload-artifact@v4
+        with:
+          name: SimplexSpeichermanager-win-${{ matrix.arch }}
+          path: publish/SimplexSpeichermanager
+          retention-days: 30
+
+      - name: Release-Datei hochladen (nur bei Tags)
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: SimplexSpeichermanager-win-${{ matrix.arch }}.zip
+          generate_release_notes: true
