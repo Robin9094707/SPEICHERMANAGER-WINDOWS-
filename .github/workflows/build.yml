@@ -50,20 +50,20 @@ jobs:
           $size = (Get-ChildItem publish/SimplexSpeichermanager -Recurse | Measure-Object Length -Sum).Sum / 1MB
           "Paketgröße: {0:N1} MB" -f $size
 
-      - name: Smoke-Test (App startet?)
+      - name: Selbsttest (App starten, alle Seiten öffnen)
         if: matrix.arch == 'x64'
-        continue-on-error: true
         shell: pwsh
         run: |
-          $p = Start-Process publish/SimplexSpeichermanager/SimplexSpeichermanager.exe -PassThru
-          Start-Sleep -Seconds 12
-          if ($p.HasExited) {
-            $log = Join-Path $env:LOCALAPPDATA 'SimplexSpeichermanager\log.txt'
-            if (Test-Path $log) { Get-Content $log }
-            throw "App wurde sofort beendet (ExitCode $($p.ExitCode))"
-          }
-          "App läuft (PID $($p.Id))"
-          Stop-Process -Id $p.Id -Force
+          $log = Join-Path $env:LOCALAPPDATA 'SimplexSpeichermanager\log.txt'
+          Remove-Item $log -ErrorAction SilentlyContinue
+          $p = Start-Process publish/SimplexSpeichermanager/SimplexSpeichermanager.exe -ArgumentList '--selftest' -PassThru
+          if (-not $p.WaitForExit(90000)) { Stop-Process -Id $p.Id -Force; throw "Selbsttest hängt" }
+          if (-not (Test-Path $log)) { throw "Kein Log – App ist vermutlich abgestürzt (ExitCode $($p.ExitCode))" }
+          $content = Get-Content $log -Raw
+          $content
+          if ($content -notmatch 'SELFTEST ENDE') { throw "Selbsttest nicht vollständig (ExitCode $($p.ExitCode))" }
+          if ($content -match 'Unbehandelte|FEHLER|Fatal') { throw "Fehler im Selbsttest" }
+          "Selbsttest erfolgreich"
 
       - name: ZIP erstellen
         shell: pwsh
