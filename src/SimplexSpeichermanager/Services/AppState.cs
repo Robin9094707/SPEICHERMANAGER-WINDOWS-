@@ -1,4 +1,5 @@
 using Simplex.Core.Scanning;
+using Simplex.Core.Uninstall;
 
 namespace Simplex.Services;
 
@@ -22,10 +23,35 @@ public static class AppState
         ScanChanged?.Invoke(null, EventArgs.Empty);
     }
 
+    /// <summary>Ergebnis einer Restesuche, das der Reste-Finder als Nächstes anzeigen soll.</summary>
+    public static LeftoverSession? PendingLeftovers { get; private set; }
+    public static event EventHandler? PendingLeftoversChanged;
+
+    public static void SetPendingLeftovers(LeftoverSession session)
+    {
+        PendingLeftovers = session;
+        PendingLeftoversChanged?.Invoke(null, EventArgs.Empty);
+    }
+
+    public static LeftoverSession? TakePendingLeftovers()
+    {
+        var s = PendingLeftovers;
+        PendingLeftovers = null;
+        return s;
+    }
+
     public static void AddFreed(long bytes)
     {
         if (bytes <= 0) return;
         Interlocked.Add(ref s_freed, bytes);
         FreedChanged?.Invoke(null, EventArgs.Empty);
     }
+}
+
+/// <summary>Gefundene Reste nach einer Deinstallation (oder aus der Altlasten-Suche).</summary>
+public sealed class LeftoverSession
+{
+    public required string Title { get; init; }
+    public required List<LeftoverItem> Items { get; init; }
+    public bool IsOrphanScan { get; init; }
 }

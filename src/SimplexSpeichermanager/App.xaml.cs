@@ -31,7 +31,7 @@ public partial class App : Application
     private static async Task SelfTestAsync()
     {
         Log.Write("SELFTEST START");
-        foreach (var tag in new[] { "dashboard", "scan", "folders", "cleanup", "games", "programs", "settings", "dashboard" })
+        foreach (var tag in new[] { "dashboard", "scan", "folders", "cleanup", "games", "programs", "leftovers", "settings", "dashboard" })
         {
             try
             {

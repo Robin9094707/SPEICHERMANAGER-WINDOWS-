@@ -7,74 +7,189 @@
     NavigationCacheMode="Required"
     Background="Transparent">
 
-    <Grid Padding="36,24,36,24" RowSpacing="14">
+    <Grid Padding="36,24,36,24" RowSpacing="14" ColumnSpacing="20">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="*" />
+            <ColumnDefinition Width="320" />
+        </Grid.ColumnDefinitions>
 
-        <StackPanel>
-            <TextBlock Text="Programme" Style="{StaticResource PageTitle}" />
-            <TextBlock Text="Alle installierten Desktop-Programme nach Größe. Nicht mehr benötigte Programme direkt deinstallieren."
+        <StackPanel Grid.ColumnSpan="2">
+            <TextBlock Text="Deinstallation" Style="{StaticResource PageTitle}" />
+            <TextBlock Text="Programme, Windows-Apps und Bloatware restlos entfernen – inklusive aller Reste in Ordnern, Registry, Diensten und Autostart. Systemkomponenten sind gesperrt."
                        Style="{StaticResource SecondaryText}" FontSize="14" TextWrapping="Wrap" />
         </StackPanel>
 
+        <!-- Reiter + Werkzeugleiste -->
         <Grid Grid.Row="1" ColumnSpacing="10">
             <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto" />
                 <ColumnDefinition Width="*" />
                 <ColumnDefinition Width="Auto" />
                 <ColumnDefinition Width="Auto" />
                 <ColumnDefinition Width="Auto" />
             </Grid.ColumnDefinitions>
-            <StackPanel Orientation="Horizontal" Spacing="12" VerticalAlignment="Center">
-                <AutoSuggestBox x:Name="SearchBox" PlaceholderText="Programme durchsuchen…" QueryIcon="Find" Width="300" TextChanged="SearchBox_TextChanged" />
-                <TextBlock x:Name="SummaryText" Style="{StaticResource SecondaryText}" VerticalAlignment="Center" />
+            <SelectorBar x:Name="Tabs" SelectionChanged="Tabs_SelectionChanged">
+                <SelectorBarItem x:Name="TabPrograms" Text="Programme" IsSelected="True">
+                    <SelectorBarItem.Icon><FontIcon Glyph="&#xE71D;" /></SelectorBarItem.Icon>
+                </SelectorBarItem>
+                <SelectorBarItem x:Name="TabStore" Text="Windows-Apps &amp; Bloatware">
+                    <SelectorBarItem.Icon><FontIcon Glyph="&#xE719;" /></SelectorBarItem.Icon>
+                </SelectorBarItem>
+            </SelectorBar>
+            <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="12" VerticalAlignment="Center" Margin="8,0,0,0">
+                <AutoSuggestBox x:Name="SearchBox" PlaceholderText="Suchen…" QueryIcon="Find" Width="220" TextChanged="SearchBox_TextChanged" />
                 <ProgressRing x:Name="Busy" Width="18" Height="18" IsActive="False" />
             </StackPanel>
-            <ComboBox x:Name="SortCombo" Grid.Column="1" MinWidth="160" SelectionChanged="SortCombo_SelectionChanged">
+            <ComboBox x:Name="FilterCombo" Grid.Column="2" MinWidth="170" SelectionChanged="Filter_SelectionChanged">
+                <ComboBoxItem Content="Alle entfernbaren" />
+                <ComboBoxItem Content="Nur Bloatware" />
+                <ComboBoxItem Content="Laufzeiten &amp; Treiber" />
+                <ComboBoxItem Content="Defekte Einträge" />
+                <ComboBoxItem Content="Alles inkl. gesperrter" />
+            </ComboBox>
+            <ComboBox x:Name="SortCombo" Grid.Column="3" MinWidth="150" SelectionChanged="Filter_SelectionChanged">
                 <ComboBoxItem Content="Größte zuerst" />
                 <ComboBoxItem Content="Name A–Z" />
                 <ComboBoxItem Content="Neueste zuerst" />
+                <ComboBoxItem Content="Älteste zuerst" />
             </ComboBox>
-            <Button Grid.Column="2" Click="Refresh_Click" ToolTipService.ToolTip="Neu einlesen">
+            <Button Grid.Column="4" Click="Refresh_Click" ToolTipService.ToolTip="Neu einlesen">
                 <FontIcon Glyph="&#xE72C;" FontSize="14" />
             </Button>
-            <Button Grid.Column="3" Content="Windows-Apps-Einstellungen" Click="Settings_Click" />
         </Grid>
 
-        <InfoBar x:Name="Info" Grid.Row="2" IsOpen="False" />
+        <StackPanel Grid.Row="2" Grid.ColumnSpan="2" Spacing="8">
+            <InfoBar x:Name="AdminInfo" IsOpen="False" Severity="Informational" IsClosable="True"
+                     Title="Tipp: Als Administrator starten"
+                     Message="Nur mit Adminrechten lassen sich auch Reste in „Programme“, ProgramData, Diensten, geplanten Aufgaben und der System-Registry entfernen.">
+                <InfoBar.ActionButton>
+                    <Button Content="Als Administrator neu starten" Click="Admin_Click" />
+                </InfoBar.ActionButton>
+            </InfoBar>
+            <InfoBar x:Name="Info" IsOpen="False" />
+        </StackPanel>
 
+        <!-- Liste -->
         <Border Grid.Row="3" Style="{StaticResource CardStyle}" Padding="4">
-            <ListView x:Name="ProgramList" SelectionMode="None">
-                <ListView.ItemTemplate>
-                    <DataTemplate x:DataType="vm:ProgramItem">
-                        <Grid Padding="0,10" ColumnSpacing="16">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="36" />
-                                <ColumnDefinition Width="*" />
-                                <ColumnDefinition Width="110" />
-                                <ColumnDefinition Width="Auto" />
-                            </Grid.ColumnDefinitions>
-                            <Border Width="36" Height="36" CornerRadius="8" Background="{ThemeResource SubtleFillColorSecondaryBrush}">
-                                <TextBlock Text="{x:Bind Initial}" HorizontalAlignment="Center" VerticalAlignment="Center" FontWeight="SemiBold" />
-                            </Border>
-                            <StackPanel Grid.Column="1" VerticalAlignment="Center">
-                                <TextBlock Text="{x:Bind Name}" Style="{StaticResource BodyStrongTextBlockStyle}" TextTrimming="CharacterEllipsis" />
-                                <TextBlock Text="{x:Bind Details}" Style="{StaticResource SecondaryText}" />
-                            </StackPanel>
-                            <TextBlock Grid.Column="2" Text="{x:Bind SizeText, Mode=OneWay}" HorizontalAlignment="Right" VerticalAlignment="Center" Style="{StaticResource BodyStrongTextBlockStyle}" />
-                            <StackPanel Grid.Column="3" Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
-                                <Button Tag="{x:Bind}" Click="Open_Click" IsEnabled="{x:Bind HasLocation}" ToolTipService.ToolTip="Installationsordner öffnen">
-                                    <FontIcon Glyph="&#xE838;" FontSize="14" />
-                                </Button>
-                                <Button Tag="{x:Bind}" Click="Uninstall_Click" Content="Deinstallieren" />
-                            </StackPanel>
-                        </Grid>
-                    </DataTemplate>
-                </ListView.ItemTemplate>
-            </ListView>
+            <Grid>
+                <ListView x:Name="AppList" SelectionMode="None" ContainerContentChanging="AppList_ContainerContentChanging">
+                    <ListView.ItemTemplate>
+                        <DataTemplate x:DataType="vm:AppItem">
+                            <Grid Padding="0,9" ColumnSpacing="14" Opacity="{x:Bind ItemOpacity}">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="40" />
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="96" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <CheckBox IsChecked="{x:Bind IsChecked, Mode=TwoWay}" IsEnabled="{x:Bind CanUninstall}" MinWidth="0" VerticalAlignment="Center" />
+                                <Grid Grid.Column="1" Width="40" Height="40" VerticalAlignment="Center">
+                                    <Border CornerRadius="8" Background="{ThemeResource SubtleFillColorSecondaryBrush}" Visibility="{x:Bind InitialVisibility, Mode=OneWay}">
+                                        <TextBlock Text="{x:Bind Initial}" HorizontalAlignment="Center" VerticalAlignment="Center" FontWeight="SemiBold" />
+                                    </Border>
+                                    <Image Source="{x:Bind Icon, Mode=OneWay}" Width="32" Height="32" Visibility="{x:Bind IconVisibility, Mode=OneWay}" />
+                                </Grid>
+                                <StackPanel Grid.Column="2" VerticalAlignment="Center" Spacing="1">
+                                    <StackPanel Orientation="Horizontal" Spacing="8">
+                                        <TextBlock Text="{x:Bind Name}" Style="{StaticResource BodyStrongTextBlockStyle}" TextTrimming="CharacterEllipsis" MaxWidth="460" />
+                                        <Border Style="{StaticResource BadgeStyle}" Padding="6,0" Visibility="{x:Bind BloatVisibility}" Background="{ThemeResource SystemFillColorCautionBackgroundBrush}">
+                                            <TextBlock Text="Bloatware" FontSize="11" />
+                                        </Border>
+                                        <Border Style="{StaticResource BadgeStyle}" Padding="6,0" Visibility="{x:Bind RuntimeVisibility}" Background="{ThemeResource SystemFillColorAttentionBackgroundBrush}">
+                                            <TextBlock Text="Vorsicht" FontSize="11" />
+                                        </Border>
+                                        <Border Style="{StaticResource BadgeStyle}" Padding="6,0" Visibility="{x:Bind SystemVisibility}" Background="{ThemeResource SystemFillColorCriticalBackgroundBrush}">
+                                            <TextBlock Text="System – gesperrt" FontSize="11" />
+                                        </Border>
+                                        <Border Style="{StaticResource BadgeStyle}" Padding="6,0" Visibility="{x:Bind OrphanVisibility}" Background="{ThemeResource SystemFillColorCautionBackgroundBrush}">
+                                            <TextBlock Text="Deinstaller fehlt" FontSize="11" />
+                                        </Border>
+                                    </StackPanel>
+                                    <TextBlock Text="{x:Bind Details}" Style="{StaticResource SecondaryText}" />
+                                    <TextBlock Text="{x:Bind ClassReason}" Visibility="{x:Bind ReasonVisibility}" Style="{StaticResource SecondaryText}" FontStyle="Italic" />
+                                </StackPanel>
+                                <TextBlock Grid.Column="3" Text="{x:Bind SizeText, Mode=OneWay}" HorizontalAlignment="Right" VerticalAlignment="Center" Style="{StaticResource BodyStrongTextBlockStyle}" />
+                                <StackPanel Grid.Column="4" Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+                                    <Button Tag="{x:Bind}" Click="Open_Click" IsEnabled="{x:Bind HasLocation}" ToolTipService.ToolTip="Installationsordner öffnen">
+                                        <FontIcon Glyph="&#xE838;" FontSize="14" />
+                                    </Button>
+                                    <Button Tag="{x:Bind}" Click="Uninstall_Click" Content="{x:Bind ActionText}" IsEnabled="{x:Bind CanUninstall}" MinWidth="128" />
+                                </StackPanel>
+                            </Grid>
+                        </DataTemplate>
+                    </ListView.ItemTemplate>
+                </ListView>
+                <TextBlock x:Name="EmptyText" Text="Keine Einträge gefunden." Visibility="Collapsed" HorizontalAlignment="Center" VerticalAlignment="Center" Style="{StaticResource SecondaryText}" />
+            </Grid>
         </Border>
+
+        <!-- Seitenleiste -->
+        <ScrollViewer Grid.Row="3" Grid.Column="1">
+            <StackPanel Spacing="16">
+                <Border x:Name="ProgressCard" Style="{StaticResource CardStyle}" Visibility="Collapsed">
+                    <StackPanel Spacing="10">
+                        <StackPanel Orientation="Horizontal" Spacing="10">
+                            <ProgressRing IsActive="True" Width="20" Height="20" />
+                            <TextBlock Text="Deinstallation läuft" Style="{StaticResource BodyStrongTextBlockStyle}" />
+                        </StackPanel>
+                        <TextBlock x:Name="ProgressTitle" TextWrapping="Wrap" Style="{StaticResource BodyStrongTextBlockStyle}" />
+                        <TextBlock x:Name="ProgressText" TextWrapping="Wrap" Style="{StaticResource SecondaryText}" TextTrimming="None" />
+                        <ProgressBar x:Name="StepBar" Minimum="0" Maximum="1" />
+                        <Button x:Name="StopWaitButton" Content="Nicht weiter warten" HorizontalAlignment="Stretch" Click="StopWait_Click"
+                                ToolTipService.ToolTip="Falls der Deinstaller hängt oder schon fertig ist: weiter zum nächsten Schritt" />
+                    </StackPanel>
+                </Border>
+
+                <Border Style="{StaticResource CardStyle}">
+                    <StackPanel Spacing="12">
+                        <TextBlock Text="Ausgewählt" Style="{StaticResource SecondaryText}" />
+                        <TextBlock x:Name="SelectedText" Text="0 Programme" FontSize="28" Style="{StaticResource SubtitleTextBlockStyle}" />
+                        <TextBlock x:Name="SelectedHint" Text="Haken setzen, um mehrere Programme auf einmal zu entfernen." Style="{StaticResource SecondaryText}" TextWrapping="Wrap" TextTrimming="None" />
+                        <Button x:Name="UninstallSelectedButton" HorizontalAlignment="Stretch" Style="{StaticResource AccentButtonStyle}" Click="UninstallSelected_Click" IsEnabled="False">
+                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                <FontIcon Glyph="&#xE74D;" FontSize="14" />
+                                <TextBlock Text="Ausgewählte restlos entfernen" />
+                            </StackPanel>
+                        </Button>
+                        <Button x:Name="SelectBloatButton" HorizontalAlignment="Stretch" Click="SelectBloat_Click">
+                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                <FontIcon Glyph="&#xE73A;" FontSize="14" />
+                                <TextBlock Text="Alle Bloatware auswählen" />
+                            </StackPanel>
+                        </Button>
+                        <HyperlinkButton Content="Auswahl aufheben" HorizontalAlignment="Center" Click="ClearSelection_Click" />
+                    </StackPanel>
+                </Border>
+
+                <Border Style="{StaticResource CardStyle}">
+                    <StackPanel Spacing="6">
+                        <TextBlock Text="Optionen" Style="{StaticResource BodyStrongTextBlockStyle}" />
+                        <ToggleSwitch x:Name="SilentToggle" Header="Still deinstallieren (wenn möglich)" OnContent="Ein" OffContent="Aus" Toggled="Options_Toggled" />
+                        <TextBlock Text="MSI-, Inno-Setup-, NSIS- und Squirrel-Programme werden ohne Rückfragen entfernt. Andere zeigen ihren eigenen Assistenten."
+                                   Style="{StaticResource SecondaryText}" TextWrapping="Wrap" TextTrimming="None" />
+                        <ToggleSwitch x:Name="RestoreToggle" Header="Vorher Wiederherstellungspunkt erstellen" OnContent="Ein" OffContent="Aus" Toggled="Options_Toggled" Margin="0,8,0,0" />
+                        <ToggleSwitch x:Name="AllUsersToggle" Header="Store-Apps für alle Benutzer entfernen" OnContent="Ein" OffContent="Aus" Toggled="Options_Toggled" />
+                        <TextBlock x:Name="AdminOptionsHint" Text="Wiederherstellungspunkt und „für alle Benutzer“ benötigen Adminrechte."
+                                   Style="{StaticResource SecondaryText}" TextWrapping="Wrap" TextTrimming="None" />
+                    </StackPanel>
+                </Border>
+
+                <Border Style="{StaticResource CardStyle}">
+                    <StackPanel Spacing="8">
+                        <TextBlock Text="So gründlich wird entfernt" Style="{StaticResource BodyStrongTextBlockStyle}" />
+                        <TextBlock Style="{StaticResource SecondaryText}" TextWrapping="Wrap" TextTrimming="None"
+                                   Text="1. Fingerabdruck des Programms wird gesichert (Ordner, Exe-Namen, Hersteller).&#x0a;2. Der Original-Deinstaller läuft.&#x0a;3. Reste werden gesucht: Programmordner, AppData, ProgramData, Temp, Startmenü, Registry, Autostart, Dienste, Aufgaben, Firewall.&#x0a;4. Sie sehen alles in einer Vorschau und entscheiden.&#x0a;5. Vor dem Löschen wird eine Registry-Sicherung angelegt." />
+                        <HyperlinkButton Content="Reste-Finder für alte Programme öffnen" Click="OpenLeftovers_Click" Padding="0" />
+                    </StackPanel>
+                </Border>
+            </StackPanel>
+        </ScrollViewer>
     </Grid>
 </Page>

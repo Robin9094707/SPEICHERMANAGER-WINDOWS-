@@ -20,6 +20,7 @@ public sealed partial class MainWindow : Window
         ["cleanup"] = typeof(CleanupPage),
         ["games"] = typeof(GamesPage),
         ["programs"] = typeof(ProgramsPage),
+        ["leftovers"] = typeof(LeftoversPage),
         ["settings"] = typeof(SettingsPage),
     };
 
@@ -83,6 +84,19 @@ public sealed partial class MainWindow : Window
         tb.ButtonHoverBackgroundColor = dark ? Windows.UI.Color.FromArgb(0x20, 0xFF, 0xFF, 0xFF) : Windows.UI.Color.FromArgb(0x20, 0, 0, 0);
         tb.ButtonPressedBackgroundColor = dark ? Windows.UI.Color.FromArgb(0x30, 0xFF, 0xFF, 0xFF) : Windows.UI.Color.FromArgb(0x30, 0, 0, 0);
         tb.ButtonInactiveForegroundColor = Windows.UI.Color.FromArgb(0x80, 0x80, 0x80, 0x80);
+    }
+
+    /// <summary>Zeigt die Vorschau der gefundenen Reste im Reste-Finder an.</summary>
+    public void ShowLeftovers(LeftoverSession session)
+    {
+        AppState.SetPendingLeftovers(session);
+        NavigateTo("leftovers");
+    }
+
+    public void SetLeftoverBadge(int count)
+    {
+        LeftoverBadge.Value = count;
+        LeftoverBadge.Visibility = count > 0 ? Visibility.Visible : Visibility.Collapsed;
     }
 
     public void NavigateTo(string tag)

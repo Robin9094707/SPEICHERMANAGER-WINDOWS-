@@ -10,6 +10,9 @@ public sealed class AppSettings
     public int PerformanceIndex { get; set; }
     public bool IncludeHidden { get; set; } = true;
     public bool HideProtected { get; set; } = true;
+    public bool SilentUninstall { get; set; } = true;
+    public bool RestorePoint { get; set; } = true;
+    public bool StoreAllUsers { get; set; }
 
     private static readonly string FilePath = Path.Combine(Log.Folder, "settings.json");
 

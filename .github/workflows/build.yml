@@ -69,6 +69,22 @@ jobs:
         shell: pwsh
         run: Compress-Archive -Path publish/SimplexSpeichermanager -DestinationPath SimplexSpeichermanager-win-${{ matrix.arch }}.zip
 
+      - name: Installer bauen (Inno Setup)
+        shell: pwsh
+        run: |
+          $iscc = @("${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe", "$env:ProgramFiles\Inno Setup 6\ISCC.exe") | Where-Object { Test-Path $_ } | Select-Object -First 1
+          if (-not $iscc) {
+            choco install innosetup -y --no-progress | Out-Null
+            $iscc = @("${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe", "$env:ProgramFiles\Inno Setup 6\ISCC.exe") | Where-Object { Test-Path $_ } | Select-Object -First 1
+          }
+          if (-not $iscc) { throw "Inno Setup nicht gefunden" }
+          [xml]$proj = Get-Content src/SimplexSpeichermanager/SimplexSpeichermanager.csproj
+          $version = ($proj.Project.PropertyGroup | Where-Object { $_.Version } | Select-Object -First 1).Version
+          $src = (Resolve-Path publish/SimplexSpeichermanager).Path
+          & $iscc /Qp "/DAppVersion=$version" "/DArch=${{ matrix.arch }}" "/DSourceDir=$src" installer/SimplexSpeichermanager.iss
+          if ($LASTEXITCODE -ne 0) { throw "ISCC fehlgeschlagen ($LASTEXITCODE)" }
+          Get-ChildItem setup | Select-Object Name, Length
+
       - name: Artefakt hochladen
         uses: actions/upload-artifact@v4
         with:
@@ -76,9 +92,18 @@ jobs:
           path: publish/SimplexSpeichermanager
           retention-days: 30
 
+      - name: Installer hochladen
+        uses: actions/upload-artifact@v4
+        with:
+          name: SimplexSpeichermanager-Setup-win-${{ matrix.arch }}
+          path: setup/*.exe
+          retention-days: 30
+
       - name: Release-Datei hochladen (nur bei Tags)
         if: startsWith(github.ref, 'refs/tags/v')
         uses: softprops/action-gh-release@v2
         with:
-          files: SimplexSpeichermanager-win-${{ matrix.arch }}.zip
+          files: |
+            SimplexSpeichermanager-win-${{ matrix.arch }}.zip
+            setup/*.exe
           generate_release_notes: true

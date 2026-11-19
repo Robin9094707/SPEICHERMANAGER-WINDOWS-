@@ -77,8 +77,8 @@
                 <Button Grid.Column="3" Tag="programs" Click="QuickAction_Click" HorizontalAlignment="Stretch" HorizontalContentAlignment="Left" Padding="16">
                     <StackPanel Spacing="8">
                         <FontIcon Glyph="&#xE71D;" FontSize="24" HorizontalAlignment="Left" Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}" />
-                        <TextBlock Text="Programme" Style="{StaticResource BodyStrongTextBlockStyle}" />
-                        <TextBlock Text="Größte Programme deinstallieren" Style="{StaticResource SecondaryText}" />
+                        <TextBlock Text="Deinstallation" Style="{StaticResource BodyStrongTextBlockStyle}" />
+                        <TextBlock Text="Programme &amp; Bloatware restlos entfernen" Style="{StaticResource SecondaryText}" />
                     </StackPanel>
                 </Button>
             </Grid>

@@ -57,6 +57,9 @@ public static class Deleter
         return outcome;
     }
 
+    /// <summary>Verschiebt in den Papierkorb – ohne SafetyGuard. Nur für vorab geprüfte Spezialfälle (Startmenü-Verknüpfungen).</summary>
+    internal static bool RecycleRaw(string path) => Recycle(path);
+
     private static bool Recycle(string path)
     {
         var op = new NativeMethods.SHFILEOPSTRUCT
