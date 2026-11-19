@@ -37,15 +37,18 @@ public static class UninstallRunner
             return (command.Trim('"'), "");
         }
         // Längsten existierenden Pfad suchen (C:\Program Files\Foo\uninst.exe /x)
-        int idx = 0;
+        int idx = 0, firstExe = -1;
         while (true)
         {
             int exe = command.IndexOf(".exe", idx, StringComparison.OrdinalIgnoreCase);
             if (exe < 0) break;
+            if (firstExe < 0) firstExe = exe;
             string file = command[..(exe + 4)];
             if (File.Exists(file) || !file.Contains('\\')) return (file, command[(exe + 4)..].Trim());
             idx = exe + 4;
         }
+        // Datei existiert nicht (mehr) – trotzdem den Pfad bis „.exe“ verwenden
+        if (firstExe > 0) return (command[..(firstExe + 4)], command[(firstExe + 4)..].Trim());
         int sp = command.IndexOf(' ');
         return sp > 0 ? (command[..sp], command[(sp + 1)..].Trim()) : (command, "");
     }

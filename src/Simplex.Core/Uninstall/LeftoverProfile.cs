@@ -13,6 +13,8 @@ public sealed class LeftoverProfile
     public HashSet<string> NameKeys { get; } = new(StringComparer.Ordinal);
     public string PublisherKey { get; private set; } = "";
     public HashSet<string> ExeNames { get; } = new(StringComparer.OrdinalIgnoreCase);
+    /// <summary>Mögliche Herstellerordner (auch allgemeine wie „Mozilla“, „Google“) – nur zum Hineinschauen, nie als Ganzes.</summary>
+    public HashSet<string> VendorFolders { get; } = new(StringComparer.Ordinal);
 
     private static readonly HashSet<string> s_genericLeaf = new(StringComparer.OrdinalIgnoreCase)
     {
@@ -31,6 +33,10 @@ public sealed class LeftoverProfile
         p.InstallDir = DetermineInstallDir(app);
         foreach (var k in NameKey.KeysForName(app.Name, app.Publisher)) p.NameKeys.Add(k);
         p.PublisherKey = NameKey.PublisherKey(app.Publisher);
+        p.AddVendor(NameKey.CleanPublisher(app.Publisher));
+        string cleanName = NameKey.CleanName(app.Name);
+        int sp = cleanName.IndexOf(' ');
+        if (sp >= 3) p.AddVendor(cleanName[..sp]);   // „Mozilla Firefox“ → Mozilla
 
         if (p.InstallDir.Length > 0 && Directory.Exists(p.InstallDir))
         {
@@ -55,10 +61,18 @@ public sealed class LeftoverProfile
                 foreach (var k in NameKey.KeysForName(vi.ProductName, vi.CompanyName)) p.NameKeys.Add(k);
                 string ck = NameKey.PublisherKey(vi.CompanyName);
                 if (p.PublisherKey.Length == 0) p.PublisherKey = ck;
+                p.AddVendor(NameKey.CleanPublisher(vi.CompanyName));
             }
             catch { }
         }
         return p;
+    }
+
+    private void AddVendor(string? name)
+    {
+        string n = NameKey.Norm(name);
+        if (n.Length >= 3 && n is not ("microsoft" or "microsoftcorporation" or "windows" or "common" or "commonfiles" or "programs" or "packages" or "temp"))
+            VendorFolders.Add(n);
     }
 
     private void AddExe(string path)
@@ -129,7 +143,11 @@ public sealed class LeftoverProfile
         return best;
     }
 
-    public bool IsPublisher(string name) => PublisherKey.Length > 0 && NameKey.Norm(name) == PublisherKey;
+    public bool IsPublisher(string name)
+    {
+        string n = NameKey.Norm(name);
+        return n.Length > 0 && ((PublisherKey.Length > 0 && n == PublisherKey) || VendorFolders.Contains(n));
+    }
 
     public bool IsUnderInstallDir(string? path) =>
         InstallDir.Length > 0 && !string.IsNullOrEmpty(path) && Locations.IsUnderOrEqual(Locations.Normalize(path), InstallDir);
